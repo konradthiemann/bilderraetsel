@@ -1,0 +1,52 @@
+/* public/css/app.css – geteilte Styles & Animationen */
+
+:root { color-scheme: dark; }
+
+html, body { height: 100%; }
+body { -webkit-tap-highlight-color: transparent; overscroll-behavior: none; }
+
+/* ---- De-Blur-Animation (das Herzstück) --------------------------------
+   Bewusst als @keyframes statt CSS-transition, weil:
+     - animation-play-state: paused  -> exakte Pause/Resume durch den Host
+     - negatives animation-delay      -> späte Zuschauer/Reconnects springen
+                                          an die korrekte Stelle (Resync)
+   Reines Tailwind-Äquivalent wäre:
+     class="transition-all duration-[60000ms] ease-linear
+            blur-2xl scale-150  ->  blur-none scale-100"
+   ...lässt sich aber nicht sauber pausieren – daher dieser Weg. */
+@keyframes deblur {
+  0%   { filter: blur(32px) saturate(1.3) brightness(1.05); transform: scale(1.6); }
+  100% { filter: blur(0px)  saturate(1)   brightness(1);    transform: scale(1);   }
+}
+.deblur-img { will-change: filter, transform; max-width: 100%; }
+
+/* ---- Countdown-Ring via conic-gradient --------------------------------
+   --p = verbleibende Prozent (0..100), --ring = Farbe (setzt JS). */
+.ring {
+  --p: 100;
+  --ring: #22c55e;
+  background: conic-gradient(var(--ring) calc(var(--p) * 1%), rgba(255, 255, 255, 0.10) 0);
+  transition: background 0.2s linear;
+}
+
+/* ---- kleine Helfer ----------------------------------------------------- */
+@keyframes pop { from { transform: scale(0.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.pop { animation: pop 0.25s ease-out both; }
+
+@keyframes floaty { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+.floaty { animation: floaty 3.5s ease-in-out infinite; }
+
+@keyframes flashok { 0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); } 100% { box-shadow: 0 0 0 24px rgba(34, 197, 94, 0); } }
+.flash-ok { animation: flashok 0.6s ease-out; }
+
+.press:active { transform: scale(0.97); }
+.press { transition: transform 0.08s ease; }
+
+/* dezenter Party-Hintergrund */
+.bg-party {
+  background:
+    radial-gradient(1200px 600px at 10% -10%, rgba(124, 58, 237, 0.35), transparent 60%),
+    radial-gradient(1000px 500px at 110% 10%, rgba(219, 39, 119, 0.30), transparent 55%),
+    radial-gradient(900px 500px at 50% 120%, rgba(37, 99, 235, 0.30), transparent 60%),
+    #0b1020;
+}

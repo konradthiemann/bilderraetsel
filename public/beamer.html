@@ -1,0 +1,107 @@
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Bilderrätsel · Beamer</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="/socket.io/socket.io.js"></script>
+<link rel="stylesheet" href="/css/app.css" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📺</text></svg>" />
+
+<div class="bg-party h-screen text-white flex flex-col overflow-hidden">
+
+  <!-- Kein Raum gewählt -->
+  <section id="pick" class="hidden flex-1 flex items-center justify-center p-8">
+    <div class="bg-white/10 rounded-3xl p-8 border border-white/10 text-center max-w-md w-full">
+      <div class="text-5xl mb-3">📺</div>
+      <h1 class="text-2xl font-black mb-4">Beamer-Ansicht</h1>
+      <p class="text-white/60 mb-4">Raum-Code eingeben:</p>
+      <div class="flex gap-2">
+        <input id="pickCode" autocapitalize="characters" placeholder="RAUMCODE"
+          class="flex-1 bg-black/30 rounded-xl px-4 py-3 uppercase tracking-widest font-bold outline-none focus:ring-2 ring-pink-400" />
+        <button onclick="location.href='/beamer?room='+encodeURIComponent(pickCode.value.trim().toUpperCase())"
+          class="press bg-pink-500 font-bold px-5 rounded-xl">Los</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Kopf -->
+  <header id="head" class="hidden px-6 py-3 flex items-center justify-between gap-4 bg-black/25">
+    <div class="flex items-center gap-3 min-w-0">
+      <span class="text-3xl">🖼️</span>
+      <div class="min-w-0">
+        <div id="roomName" class="text-2xl font-black truncate leading-tight"></div>
+        <div class="text-white/50 text-sm">bilderrätsel · live</div>
+      </div>
+    </div>
+    <div id="progressWrap" class="hidden text-right">
+      <div class="text-white/60 text-sm">Frage <b id="qIndex">1</b> / <span id="qTotal">1</span></div>
+      <div class="text-emerald-300 font-bold"><span id="answeredCount">0</span> / <span id="answeredTotal">0</span> geantwortet</div>
+    </div>
+  </header>
+
+  <main class="flex-1 min-h-0">
+
+    <!-- ============ LOBBY / WARTERAUM ============ -->
+    <section id="lobby" class="hidden h-full grid md:grid-cols-2 gap-6 p-6 items-center">
+      <div class="text-center">
+        <div class="bg-white rounded-3xl p-5 inline-block shadow-2xl">
+          <img id="qr" class="w-64 h-64 md:w-80 md:h-80" alt="QR-Code zum Beitreten" />
+        </div>
+        <p class="mt-4 text-white/80">Scanne den Code oder öffne</p>
+        <p id="joinUrl" class="font-mono text-lg md:text-xl font-bold break-all"></p>
+        <p class="mt-2 text-white/60">Raum-Code: <span id="lobbyCode" class="font-black text-2xl tracking-widest text-pink-300"></span></p>
+      </div>
+      <div>
+        <h2 class="text-3xl font-black mb-1 floaty">Wer ist dabei?</h2>
+        <p class="text-white/60 mb-4"><span id="lobbyCount">0</span> Spieler:innen</p>
+        <div id="playerGrid" class="flex flex-wrap gap-2 content-start"></div>
+      </div>
+    </section>
+
+    <!-- ============ FRAGE ============ -->
+    <section id="question" class="hidden h-full flex flex-col p-4 md:p-6">
+      <div class="flex items-center gap-4 md:gap-6 flex-1 min-h-0">
+        <!-- Bild -->
+        <div class="flex-1 min-h-0 h-full rounded-3xl overflow-hidden bg-black/50 flex items-center justify-center relative">
+          <img id="qImg" class="deblur-img max-h-full max-w-full object-contain" alt="Rätselbild" />
+        </div>
+        <!-- Countdown-Ring -->
+        <div class="shrink-0 hidden md:flex flex-col items-center">
+          <div id="ring" class="ring w-40 h-40 rounded-full flex items-center justify-center">
+            <div class="w-32 h-32 rounded-full bg-[#0b1020] flex items-center justify-center">
+              <span id="ringNum" class="text-5xl font-black tabular-nums">60</span>
+            </div>
+          </div>
+          <div class="text-white/50 mt-2 text-sm uppercase tracking-wider">Sekunden</div>
+        </div>
+      </div>
+      <p id="qText" class="text-center text-2xl md:text-4xl font-black my-3 md:my-4"></p>
+      <div id="options" class="grid grid-cols-2 gap-3"></div>
+    </section>
+
+    <!-- ============ AUFLÖSUNG ============ -->
+    <section id="reveal" class="hidden h-full grid lg:grid-cols-2 gap-6 p-6 min-h-0">
+      <div class="flex flex-col min-h-0">
+        <div class="flex-1 min-h-0 rounded-3xl overflow-hidden bg-black/50 flex items-center justify-center mb-3">
+          <img id="rImg" class="max-h-full max-w-full object-contain" alt="Auflösung" />
+        </div>
+        <p id="rText" class="text-center text-xl md:text-2xl font-bold mb-2"></p>
+        <div id="rOptions" class="grid grid-cols-2 gap-2"></div>
+      </div>
+      <div class="flex flex-col min-h-0">
+        <h2 class="text-3xl font-black mb-3">🏆 Rangliste</h2>
+        <div id="board" class="space-y-2 overflow-auto"></div>
+      </div>
+    </section>
+
+    <!-- ============ ENDE ============ -->
+    <section id="ended" class="hidden h-full flex flex-col items-center justify-center p-6">
+      <div class="text-6xl mb-2 floaty">🏆</div>
+      <h2 class="text-4xl font-black mb-6">Endstand</h2>
+      <div id="finalBoard" class="w-full max-w-2xl space-y-2"></div>
+    </section>
+
+  </main>
+</div>
+
+<script src="/js/common.js"></script>
+<script src="/js/beamer.js"></script>

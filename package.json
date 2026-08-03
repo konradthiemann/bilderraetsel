@@ -1,0 +1,22 @@
+{
+  "name": "bilderraetsel",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Echtzeit-Bilderrätsel-Quiz (Kahoot-Style) für Feiern – Multi-Room, mobile-first, Socket.io.",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "seed": "node scripts/seed.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "multer": "^2.0.0",
+    "qrcode": "^1.5.4",
+    "socket.io": "^4.7.5"
+  }
+}

@@ -1,0 +1,153 @@
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Bilderrätsel · Admin</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="/socket.io/socket.io.js"></script>
+<link rel="stylesheet" href="/css/app.css" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎙️</text></svg>" />
+
+<div class="bg-party min-h-screen text-white">
+
+  <!-- ============ LOGIN ============ -->
+  <section id="login" class="hidden min-h-screen flex items-center justify-center p-5">
+    <div class="w-full max-w-sm bg-white/10 rounded-3xl p-6 border border-white/10">
+      <div class="text-center mb-4">
+        <div class="text-5xl mb-2">🎙️</div>
+        <h1 class="text-2xl font-black">Admin-Login</h1>
+      </div>
+      <input id="adminPw" type="password" placeholder="Admin-Passwort"
+        class="w-full bg-black/30 rounded-xl px-4 py-3 outline-none focus:ring-2 ring-pink-400" />
+      <button id="loginBtn" onclick="doLogin()" class="press w-full mt-3 bg-pink-500 hover:bg-pink-400 font-black py-3 rounded-xl">Anmelden</button>
+      <p id="loginErr" class="text-red-300 text-sm text-center mt-2 min-h-[1.25rem]"></p>
+    </div>
+  </section>
+
+  <!-- ============ DASHBOARD ============ -->
+  <section id="dash" class="hidden max-w-3xl mx-auto p-4 md:p-6">
+    <div class="flex items-center justify-between mb-4">
+      <h1 class="text-2xl font-black">🎛️ Spiele</h1>
+      <button onclick="logout()" class="text-white/60 text-sm hover:text-white">Abmelden</button>
+    </div>
+
+    <!-- Raum anlegen -->
+    <div class="bg-white/10 rounded-2xl p-4 border border-white/10 mb-6">
+      <h2 class="font-bold mb-3">Neues Spiel anlegen</h2>
+      <div class="grid sm:grid-cols-2 gap-3">
+        <input id="newName" placeholder="Name (z.B. Ralfs 40.)" class="bg-black/30 rounded-xl px-4 py-3 outline-none focus:ring-2 ring-pink-400" />
+        <input id="newPass" placeholder="Raum-Passwort für Gäste" class="bg-black/30 rounded-xl px-4 py-3 outline-none focus:ring-2 ring-pink-400" />
+      </div>
+      <div class="flex items-center gap-3 mt-3">
+        <label class="text-sm text-white/60">Standard-Antwortoptionen</label>
+        <select id="newOpts" class="bg-black/30 rounded-lg px-3 py-2">
+          <option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option>
+        </select>
+        <button onclick="createRoom()" class="press ml-auto bg-emerald-500 hover:bg-emerald-400 font-bold px-5 py-2 rounded-xl">Anlegen</button>
+      </div>
+    </div>
+
+    <div id="roomList" class="space-y-3"></div>
+  </section>
+
+  <!-- ============ FRAGEN-EDITOR ============ -->
+  <section id="editor" class="hidden max-w-3xl mx-auto p-4 md:p-6">
+    <button onclick="backToDash()" class="text-white/60 text-sm mb-3">← Zurück</button>
+    <h1 class="text-2xl font-black mb-1">✏️ Fragen: <span id="edRoomName"></span></h1>
+    <p class="text-white/50 text-sm mb-5">Code <span id="edRoomCode" class="font-mono font-bold"></span></p>
+
+    <!-- Formular -->
+    <div class="bg-white/10 rounded-2xl p-4 border border-white/10 mb-6">
+      <h2 id="edFormTitle" class="font-bold mb-3">Neue Frage</h2>
+      <input type="hidden" id="edQid" />
+      <label class="text-xs uppercase tracking-wider text-white/50">Fragetext</label>
+      <input id="edText" placeholder="Was ist auf dem Bild zu sehen?" class="w-full mt-1 mb-3 bg-black/30 rounded-xl px-4 py-3 outline-none focus:ring-2 ring-pink-400" />
+
+      <label class="text-xs uppercase tracking-wider text-white/50">Bild</label>
+      <div class="flex items-center gap-3 mt-1 mb-3">
+        <div class="w-28 h-20 rounded-xl bg-black/40 overflow-hidden shrink-0 flex items-center justify-center">
+          <img id="edPreview" class="w-full h-full object-cover hidden" />
+          <span id="edNoImg" class="text-white/30 text-xs">kein Bild</span>
+        </div>
+        <label class="press bg-white/15 hover:bg-white/25 rounded-xl px-4 py-2 cursor-pointer text-sm font-bold">
+          Bild wählen…
+          <input id="edFile" type="file" accept="image/*" class="hidden" onchange="uploadImage(this)" />
+        </label>
+        <span id="edUpStatus" class="text-white/50 text-sm"></span>
+      </div>
+      <input type="hidden" id="edImageUrl" />
+
+      <label class="text-xs uppercase tracking-wider text-white/50">Antworten (richtige markieren)</label>
+      <div id="edOptions" class="space-y-2 mt-1 mb-2"></div>
+      <button onclick="addOption()" id="edAddOpt" class="text-sm text-pink-300 hover:text-pink-200 font-bold">+ Antwort hinzufügen</button>
+
+      <div class="flex gap-2 mt-4">
+        <button onclick="saveQuestion()" class="press bg-emerald-500 hover:bg-emerald-400 font-black px-5 py-2 rounded-xl">Speichern</button>
+        <button onclick="resetForm()" class="press bg-white/10 hover:bg-white/20 px-4 py-2 rounded-xl">Leeren</button>
+        <span id="edErr" class="text-red-300 text-sm self-center"></span>
+      </div>
+    </div>
+
+    <h2 class="font-bold mb-2">Fragen (<span id="edCount">0</span>)</h2>
+    <div id="questionList" class="space-y-2"></div>
+  </section>
+
+  <!-- ============ GAMEMASTER / HOST ============ -->
+  <section id="host" class="hidden max-w-md mx-auto p-4 min-h-screen flex flex-col">
+    <div class="flex items-center justify-between mb-2">
+      <button onclick="backToDash()" id="hostBack" class="text-white/60 text-sm">← Zurück</button>
+      <div class="text-right">
+        <div id="hostRoomName" class="font-black"></div>
+        <div class="text-white/50 text-xs">Code <span id="hostCode" class="font-mono"></span></div>
+      </div>
+    </div>
+
+    <!-- Status -->
+    <div class="bg-white/10 rounded-2xl p-4 border border-white/10 mb-3">
+      <div class="flex items-center justify-between">
+        <span id="hostPhase" class="font-bold text-lg">Lobby</span>
+        <span id="hostTimer" class="text-2xl font-black tabular-nums hidden">60</span>
+      </div>
+      <div id="hostQInfo" class="hidden mt-2">
+        <div class="text-white/60 text-sm">Frage <b id="hostQIdx">1</b>/<span id="hostQTotal">1</span></div>
+        <div id="hostQText" class="font-bold"></div>
+        <div class="text-emerald-300 text-sm mt-1">Richtig: <span id="hostCorrect" class="font-bold"></span></div>
+      </div>
+      <div class="text-white/50 text-sm mt-2"><span id="hostPlayers">0</span> Spieler:innen im Raum</div>
+    </div>
+
+    <!-- Steuerung -->
+    <div class="grid grid-cols-2 gap-3 mb-3">
+      <button id="btnStart" onclick="cmd('start')" class="press col-span-2 bg-emerald-500 hover:bg-emerald-400 font-black text-xl py-4 rounded-2xl">▶️ Spiel starten</button>
+      <button id="btnNext" onclick="cmd('next')" class="press col-span-2 hidden bg-indigo-500 hover:bg-indigo-400 font-black text-xl py-4 rounded-2xl">⏭️ Nächste Frage</button>
+      <button id="btnPause" onclick="togglePause()" class="press hidden bg-amber-500 hover:bg-amber-400 font-bold py-3 rounded-2xl">⏸️ Pause</button>
+      <button id="btnReveal" onclick="cmd('reveal')" class="press hidden bg-white/15 hover:bg-white/25 font-bold py-3 rounded-2xl">👁️ Auflösen</button>
+    </div>
+
+    <!-- Live: wer fehlt -->
+    <div id="livePanel" class="hidden bg-white/10 rounded-2xl p-4 border border-white/10 mb-3 flex-1 min-h-0 overflow-auto">
+      <div class="flex items-center justify-between mb-2">
+        <span class="font-bold">Noch nicht geantwortet</span>
+        <span class="text-emerald-300 font-bold"><span id="liveAnswered">0</span>/<span id="livePlayers">0</span></span>
+      </div>
+      <div id="liveMissing" class="flex flex-wrap gap-2"></div>
+      <div class="mt-3 border-t border-white/10 pt-3">
+        <div class="font-bold mb-1 text-sm text-white/70">Antwortverteilung</div>
+        <div id="liveCounts" class="space-y-1"></div>
+      </div>
+    </div>
+
+    <!-- Mini-Leaderboard -->
+    <div class="bg-white/10 rounded-2xl p-4 border border-white/10">
+      <div class="font-bold mb-2">🏆 Top 5</div>
+      <div id="hostBoard" class="space-y-1"></div>
+    </div>
+
+    <div class="flex gap-2 mt-3">
+      <a id="openBeamer" target="_blank" class="press flex-1 text-center bg-white/10 hover:bg-white/20 rounded-xl py-2 text-sm font-bold">📺 Beamer öffnen</a>
+      <button onclick="cmd('reset')" class="press bg-red-500/80 hover:bg-red-500 rounded-xl py-2 px-4 text-sm font-bold">↺ Reset</button>
+    </div>
+  </section>
+
+</div>
+
+<script src="/js/common.js"></script>
+<script src="/js/admin.js"></script>

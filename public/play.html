@@ -1,0 +1,106 @@
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Bilderrätsel · Mitspielen</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="/socket.io/socket.io.js"></script>
+<link rel="stylesheet" href="/css/app.css" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>" />
+
+<div class="bg-party min-h-screen text-white flex flex-col">
+
+  <!-- Kopfzeile (nach Beitritt) -->
+  <header id="bar" class="hidden sticky top-0 z-10 bg-black/30 backdrop-blur px-4 py-2 flex items-center justify-between">
+    <div class="flex items-center gap-2 min-w-0">
+      <span class="text-lg">🖼️</span>
+      <span id="barName" class="font-bold truncate"></span>
+    </div>
+    <div class="text-right leading-tight">
+      <div id="barScore" class="font-black text-lg">0</div>
+      <div class="text-[10px] uppercase tracking-wider text-white/50">Punkte</div>
+    </div>
+  </header>
+
+  <main class="flex-1 flex flex-col p-4">
+
+    <!-- ============ BEITRETEN ============ -->
+    <section id="join" class="flex-1 flex flex-col justify-center max-w-md w-full mx-auto">
+      <div class="text-center mb-6 floaty">
+        <div class="text-5xl mb-2">🎮</div>
+        <h1 class="text-2xl font-black">Beitreten</h1>
+        <p id="roomTitle" class="text-white/70 mt-1">&nbsp;</p>
+      </div>
+      <div class="bg-white/10 backdrop-blur rounded-3xl p-6 border border-white/10 space-y-3">
+        <div id="codeWrap" class="hidden">
+          <label class="text-xs uppercase tracking-wider text-white/50">Raum-Code</label>
+          <input id="room" autocapitalize="characters" placeholder="RAUMCODE"
+            class="w-full mt-1 bg-black/30 rounded-xl px-4 py-3 uppercase tracking-widest font-bold outline-none focus:ring-2 ring-pink-400" />
+        </div>
+        <div>
+          <label class="text-xs uppercase tracking-wider text-white/50">Passwort</label>
+          <input id="password" type="password" placeholder="Raum-Passwort"
+            class="w-full mt-1 bg-black/30 rounded-xl px-4 py-3 outline-none focus:ring-2 ring-pink-400" />
+        </div>
+        <div>
+          <label class="text-xs uppercase tracking-wider text-white/50">Dein Name</label>
+          <input id="username" maxlength="24" placeholder="z.B. Tante Erika"
+            class="w-full mt-1 bg-black/30 rounded-xl px-4 py-3 outline-none focus:ring-2 ring-pink-400" />
+        </div>
+        <button id="joinBtn" onclick="doJoin()"
+          class="press w-full bg-pink-500 hover:bg-pink-400 disabled:opacity-50 font-black text-lg py-3 rounded-xl">
+          Mitspielen 🚀
+        </button>
+        <p id="joinErr" class="text-red-300 text-sm text-center min-h-[1.25rem]"></p>
+      </div>
+    </section>
+
+    <!-- ============ LOBBY ============ -->
+    <section id="lobby" class="hidden flex-1 flex flex-col items-center justify-center text-center">
+      <div class="text-6xl mb-4 floaty">⏳</div>
+      <h2 class="text-2xl font-black">Du bist dabei!</h2>
+      <p class="text-white/70 mt-2">Warte auf den Spielstart…</p>
+      <p class="mt-6 text-white/50"><span id="lobbyCount">0</span> Spieler:innen im Raum</p>
+    </section>
+
+    <!-- ============ FRAGE ============ -->
+    <section id="question" class="hidden flex-1 flex flex-col">
+      <div class="flex items-center justify-between mb-2 text-sm text-white/70">
+        <span>Frage <b id="qIndex">1</b>/<span id="qTotal">1</span></span>
+        <span id="qTimer" class="font-black text-lg tabular-nums">60</span>
+      </div>
+      <div class="rounded-2xl overflow-hidden bg-black/40 mb-3 aspect-video flex items-center justify-center">
+        <img id="qImg" class="deblur-img w-full h-full object-cover" alt="Rätselbild" />
+      </div>
+      <p id="qText" class="text-center font-bold text-lg mb-3"></p>
+      <div id="options" class="grid grid-cols-1 gap-3"></div>
+      <p id="answeredHint" class="hidden text-center text-emerald-300 font-bold mt-4">✅ Antwort gespeichert – warte auf Auflösung…</p>
+    </section>
+
+    <!-- ============ AUFLÖSUNG ============ -->
+    <section id="reveal" class="hidden flex-1 flex flex-col items-center justify-center text-center">
+      <div id="revealIcon" class="text-7xl mb-2">🎉</div>
+      <h2 id="revealTitle" class="text-3xl font-black"></h2>
+      <p id="revealPoints" class="text-xl mt-1"></p>
+      <div class="mt-4 bg-white/10 rounded-2xl px-6 py-3 border border-white/10">
+        <div class="text-white/60 text-sm">Dein Platz</div>
+        <div id="revealRank" class="text-4xl font-black">–</div>
+      </div>
+      <p class="text-white/60 mt-6">Weiter geht's gleich…</p>
+    </section>
+
+    <!-- ============ ENDE ============ -->
+    <section id="ended" class="hidden flex-1 flex flex-col items-center justify-center text-center">
+      <div class="text-7xl mb-2">🏁</div>
+      <h2 class="text-3xl font-black">Spiel vorbei!</h2>
+      <div class="mt-4 bg-white/10 rounded-2xl px-8 py-4 border border-white/10">
+        <div class="text-white/60 text-sm">Dein Endplatz</div>
+        <div id="finalRank" class="text-5xl font-black">–</div>
+        <div id="finalScore" class="text-white/70 mt-1">0 Punkte</div>
+      </div>
+      <div id="podium" class="mt-6 w-full max-w-sm space-y-2"></div>
+    </section>
+
+  </main>
+</div>
+
+<script src="/js/common.js"></script>
+<script src="/js/play.js"></script>

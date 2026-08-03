@@ -1,0 +1,56 @@
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Bilderrätsel</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/app.css" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🖼️</text></svg>" />
+
+<div class="bg-party min-h-screen text-white flex items-center justify-center p-5">
+  <div class="w-full max-w-md">
+    <div class="text-center mb-8 floaty">
+      <div class="text-6xl mb-2">🖼️🎉</div>
+      <h1 class="text-4xl font-black tracking-tight">Bilderrätsel</h1>
+      <p class="text-white/70 mt-1">Das Live-Quiz für deine Feier</p>
+    </div>
+
+    <!-- Mitspielen -->
+    <div class="bg-white/10 backdrop-blur rounded-3xl p-6 mb-4 border border-white/10">
+      <h2 class="font-bold text-lg mb-3">📱 Mitspielen</h2>
+      <p class="text-white/60 text-sm mb-3">Raum-Code eingeben oder QR-Code auf der Leinwand scannen.</p>
+      <div class="flex gap-2">
+        <input id="code" inputmode="text" autocapitalize="characters" placeholder="RAUMCODE"
+          class="flex-1 bg-black/30 rounded-xl px-4 py-3 uppercase tracking-widest font-bold outline-none focus:ring-2 ring-pink-400 placeholder:text-white/30" />
+        <button onclick="goPlay()" class="press bg-pink-500 hover:bg-pink-400 font-bold px-5 rounded-xl">Los</button>
+      </div>
+    </div>
+
+    <!-- Beamer & Admin -->
+    <div class="grid grid-cols-2 gap-4">
+      <button onclick="goBeamer()" class="press bg-white/10 hover:bg-white/20 border border-white/10 rounded-3xl p-5 text-left">
+        <div class="text-3xl mb-1">📺</div>
+        <div class="font-bold">Beamer</div>
+        <div class="text-white/50 text-xs">Leinwand-Ansicht</div>
+      </button>
+      <a href="/admin" class="press bg-white/10 hover:bg-white/20 border border-white/10 rounded-3xl p-5 text-left block">
+        <div class="text-3xl mb-1">🎙️</div>
+        <div class="font-bold">Admin</div>
+        <div class="text-white/50 text-xs">Gamemaster</div>
+      </a>
+    </div>
+
+    <p class="text-center text-white/30 text-xs mt-8">Selbstgebaut · läuft komplett im Eigenbetrieb</p>
+  </div>
+</div>
+
+<script>
+  function code() { return (document.getElementById('code').value || '').trim().toUpperCase(); }
+  function goPlay() {
+    const c = code();
+    location.href = c ? `/play?room=${encodeURIComponent(c)}` : '/play';
+  }
+  function goBeamer() {
+    const c = code();
+    location.href = c ? `/beamer?room=${encodeURIComponent(c)}` : '/beamer';
+  }
+  document.getElementById('code').addEventListener('keydown', (e) => { if (e.key === 'Enter') goPlay(); });
+</script>
