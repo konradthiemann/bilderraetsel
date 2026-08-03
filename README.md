@@ -31,6 +31,7 @@ und Rangliste.
 - [Mehrere Feiern (Mandantenfähigkeit)](#mehrere-feiern-mandantenfähigkeit)
 - [Tests](#tests)
 - [Grenzen & Ideen](#grenzen--ideen)
+- [Lizenz](#lizenz)
 
 ---
 
@@ -344,4 +345,10 @@ und die Leaderboard-Sortierung ab.
   könnten Live-Scores ebenfalls ins Volume persistiert werden.
 - **Bild-Optimierung:** aktuell werden Bilder unverändert ausgeliefert. Für sehr
   große Fotos wäre serverseitiges Resizing (z. B. `sharp`) eine Option.
+
+---
+
+## Lizenz
+
+[MIT](LICENSE) © 2026 Konrad Thiemann
 ```
